@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push-image:
@@ -18,20 +18,27 @@ jobs:
       packages: write
 
     steps:
+    - id: string-repo # https://github.com/Entepotenz/change-string-case-action-min-dependencies
+      uses: Entepotenz/change-string-case-action@v1
+      with:
+        string: ${{ github.repository }}
+
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
         # See: https://github.com/actions/checkout
         fetch-depth: 0
 
-    - name: fetch git tags
+    - name: fetch git tags and GITHUB_ENV
       id: gitfetch
       run: |
         export REGISTRY=ghcr.io
-        export GITREPO=${{ github.repository }}
-        export TAG=$(git describe --tags --always)
-        export FULL_IMAGE=${REGISTRY}/${GITREPO}:${TAG}
+        export IMAGE_NAME=${{ steps.string-repo.outputs.lowercase }}
+        export GIT_DESCRIBE=$(git describe --tags --always)
+        export FULL_IMAGE=${REGISTRY}/${IMAGE_NAME}:${GIT_DESCRIBE}
         echo "FULL_IMAGE=${FULL_IMAGE}" >> ${GITHUB_ENV}
+        echo "IMAGE_NAME=${IMAGE_NAME}" >> ${GITHUB_ENV}
+        echo "GIT_DESCRIBE=${GIT_DESCRIBE}" >> ${GITHUB_ENV}
 
     - name: Set up QEMU + binfmt
       # https://github.com/docker/buildx/issues/495#issuecomment-1043341496

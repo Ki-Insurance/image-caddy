@@ -18,8 +18,8 @@ jobs:
       packages: write
 
     steps:
-    - id: string-repo # https://github.com/Entepotenz/change-string-case-action-min-dependencies
-      uses: Entepotenz/change-string-case-action@v1
+    - id: string-repo # https://github.com/ASzc/change-string-case-action
+      uses: ASzc/change-string-case-action@v5
       with:
         string: ${{ github.repository }}
 

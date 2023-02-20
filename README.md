@@ -40,8 +40,15 @@ After its launched, trigger some traffic
 
 ```sh
 while true; do
-  curl localhost:8080/api/foo -s
+  curl localhost:8080/socks/foo -s
   sleep 0.5
   echo
 done
 ```
+
+1 out of 10 of the curls should result in a non-200 (and they should be slower also)
+
+Now open Zipkin or Jaegar and you should see some traces
+see:
+- http://127.0.0.1:9411 (zipkin)
+- http://127.0.0.1:16686/search

@@ -1,0 +1,9 @@
+# log default {
+# 	output stdout
+# 	format json
+# }
+
+# Caddyfiles allow environmental substitution anywhere
+{$SITE_ADDRESS} {
+	root * ./content
+}

@@ -64,13 +64,12 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+    # RE: https://github.com/actions/starter-workflows/blob/main/ci/docker-publish.yml
     - name: Build and push Docker image
-      # uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       uses: docker/build-push-action@v3
       with:
         context: .
-        push: true
-        # push: ${{ github.event_name != 'pull_request' }}
+        push: ${{ github.event_name != 'pull_request' }}  # Don't push on PR
         tags: ${{ env.FULL_IMAGE }}
         labels: ${{ steps.dockermeta.outputs.labels }}
         platforms: linux/amd64

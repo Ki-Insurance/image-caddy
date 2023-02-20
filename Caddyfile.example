@@ -1,0 +1,63 @@
+# use "import common" to pull in this "common" chunk in later
+(common) {
+	# hide "Server" header
+	header /* {
+		-Server
+	}
+
+	# gzip content on default
+	encode gzip
+}
+
+# set env var SITE_ADDRESS to anything
+# Some examples:
+# - :8080
+# - 0.0.0.0:8000 
+# - mysite.com:1212
+{$SITE_ADDRESS} {
+	import common
+
+	# Enable static file server and lest the URI doesn't match a file, use the contents of index.html
+	handle {
+		root * /content
+		file_server
+		try_files {path} /index.html
+	  tracing {
+		  span frontend
+	  }
+	}
+
+	# Seperately we establish a revserse proxy out to our faux backend
+	handle /socks/* {
+
+	  # https://caddyserver.com/docs/caddyfile/directives/tracing
+	  tracing {
+		  span backend
+	  }
+
+		# reverse proxy this into "backend" server (hostname:port)
+		reverse_proxy /socks/* socks:1323
+
+		# only set Cache-Control if upstream does not
+		header ?Cache-Control "max-age=3600"
+	}
+
+	log {
+		format json
+		output stdout
+
+		# # Data protection example.. do not log the incoming "User-Agent" headers
+		# format filter {
+		# 	wrap console
+		# 	fields {
+		# 		request>headers>User-Agent delete
+		# 	}
+		# }
+	}
+
+	# set some example headers again just for example
+	header Cache-Control max-age=3600
+	header /static/* Cache-Control max-age=31536000
+
+	# more examples: https://caddyserver.com/docs/caddyfile/patterns
+}

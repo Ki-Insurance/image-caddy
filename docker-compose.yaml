@@ -1,0 +1,107 @@
+version: "3"
+
+services:
+
+  # a fake backend "api" which will (mostly) returns 200 socks but occasionally also returns 502 socks
+  # NB: it only speaks under the URI "/socks/*"
+  socks:
+    container_name: socks
+    build:
+      context: ./socks
+    environment:
+      # resource attributes (AKA tags)
+      OTEL_RESOURCE_ATTRIBUTES: "env=local,runtime=golang,lifecycle=beta"
+
+      # https://github.com/open-telemetry/opentelemetry-go/blob/1f5b159161e0ff54df4677284fa7d6718dc9186d/sdk/trace/sampler_env.go#L29-L34
+      OTEL_TRACES_SAMPLER: "traceidratio=1.0,parentbased_always_on"
+
+      OTEL_EXPORTER_OTLP_ENDPOINT: collector:4317 # gRPC
+      OTEL_SERVICE_NAME: "socks"
+    depends_on:
+      # the code won't turn on until it can connect to the collector
+      # obviously you shouldn't design a backend API this way
+      - collector
+
+  # the local caddy plus a config to reverse-proxy "/socks" to the "socks" service
+  caddy:
+    container_name: caddy
+    build:
+      context: .
+    ports:
+      - 8080:8080
+    volumes:
+      - ./Caddyfile.example:/Caddyfile
+      - ./content/index.html:/content/index.html
+    environment:
+      SITE_ADDRESS: ":8080"
+      # OTEL config
+      # See:
+      # - https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md
+      # - https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/specification/protocol/exporter.md
+      # OTEL_PROPAGATORS: "tracecontext,baggage,b3"
+      OTEL_SERVICE_NAME: "caddy"
+      # resource attributes (AKA tags)
+      OTEL_RESOURCE_ATTRIBUTES: "env=local,runtime=golang"
+
+      # sampler settings.. you might not want to sample 100% of everything in real life
+      OTEL_TRACES_SAMPLER: "pollingIntervalMs=1000,initialSamplingRate=1"
+
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc # "http/json", "http/protobuf", "grpc"
+      # # uncomment these to debug GRPC to stdout
+      # GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
+      # GRPC_GO_LOG_SEVERITY_LEVEL: info
+
+    depends_on:
+      - collector
+      - jaeger-all-in-one
+      - zipkin-all-in-one
+
+  # OpenTelemetry Collector
+  collector:
+    container_name: collector
+    image: otel/opentelemetry-collector:0.67.0
+    restart: always
+    command:
+      - "--config=/etc/otel-collector-config.yaml"
+    volumes:
+      - ./demo/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "55679:55679" # zpages extension
+
+  # Prometheus, see: http://0.0.0.0:9090
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    restart: always
+    volumes:
+      - ./demo/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # Collector will send traces to both zipkin and jaegar.. lets initialise them
+  #
+  # see: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/examples/demo
+  #
+  # Zipkin, see: http://0.0.0.0:9411
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
+  #
+  # Jaeger, see: http://0.0.0.0:16686
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaegar
+    restart: always
+    ports:
+      - "16686:16686" # UI
+      - "14268"
+      - "14250"

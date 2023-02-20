@@ -35,9 +35,12 @@ COPY --from=upx /caddy /caddy
 
 WORKDIR /content
 COPY --from=builder /index.html .
+COPY Caddyfile /Caddyfile
 
 # tell caddy where to listen
 ENV SITE_ADDRESS=0.0.0.0:8080
+
+# TODO: change user to "app"
 
 CMD ["/caddy", "run", "--config", "/Caddyfile", "--adapter", "caddyfile"]
 

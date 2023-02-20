@@ -25,8 +25,9 @@ services:
   # the local caddy plus a config to reverse-proxy "/socks" to the "socks" service
   caddy:
     container_name: caddy
-    build:
-      context: .
+    image: docker pull ghcr.io/ki-insurance/image-caddy:0.1.1
+    # build:
+    #   context: .
     ports:
       - 8080:8080
     volumes:

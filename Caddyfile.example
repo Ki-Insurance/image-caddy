@@ -19,7 +19,7 @@
 
 	# Enable static file server and lest the URI doesn't match a file, use the contents of index.html
 	handle {
-		root * /content
+		root * ./content
 		file_server
 		try_files {path} /index.html
 	  tracing {

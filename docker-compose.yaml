@@ -30,8 +30,8 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./Caddyfile.example:/Caddyfile
-      - ./content/index.html:/content/index.html
+      - ./Caddyfile.example:/app/Caddyfile
+      - ./content/index.html:/app/content/index.html
     environment:
       SITE_ADDRESS: ":8080"
       # OTEL config

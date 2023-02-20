@@ -35,10 +35,10 @@ COPY --from=upx /caddy /caddy
 
 
 # Default config + content
-WORKDIR /content
+WORKDIR /app/content
 COPY --from=builder /index.html .
-COPY Caddyfile /Caddyfile
-RUN chown app /Caddyfile
+COPY Caddyfile /app/Caddyfile
+RUN chown -R app /app
 
 # tell caddy where to listen
 ENV SITE_ADDRESS=0.0.0.0:8080
@@ -46,5 +46,5 @@ ENV SITE_ADDRESS=0.0.0.0:8080
 # change user to "app"
 USER app
 
-CMD ["/caddy", "run", "--config", "/Caddyfile", "--adapter", "caddyfile"]
+CMD ["/caddy", "run", "--config", "/app/Caddyfile", "--adapter", "caddyfile"]
 

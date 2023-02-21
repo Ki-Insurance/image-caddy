@@ -10,9 +10,6 @@ FROM docker.io/caddy:builder-alpine AS builder
 # - https://github.com/caddyserver/caddy/releases
 RUN xcaddy build v2.6.4
 
-RUN wget -O /index.html https://github.com/caddyserver/dist/raw/v2.6.4/welcome/index.html ;
-
-
 FROM gruebel/upx:latest as upx
 COPY --from=builder /usr/bin/caddy /caddy.orig
 
@@ -30,13 +27,10 @@ RUN apk add --no-cache \
 
 # add new user, lets not run as root
 RUN adduser -D app
-
 COPY --from=upx /caddy /caddy
-
 
 # Default config + content
 WORKDIR /app/content
-COPY --from=builder /index.html .
 COPY Caddyfile /app/Caddyfile
 RUN chown -R app /app
 

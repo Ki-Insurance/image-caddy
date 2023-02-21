@@ -6,15 +6,14 @@ services:
   # NB: it only speaks under the URI "/socks/*"
   socks:
     container_name: socks
+    restart: always
     build:
       context: ./socks
     environment:
       # resource attributes (AKA tags)
       OTEL_RESOURCE_ATTRIBUTES: "env=local,runtime=golang,lifecycle=beta"
-
       # https://github.com/open-telemetry/opentelemetry-go/blob/1f5b159161e0ff54df4677284fa7d6718dc9186d/sdk/trace/sampler_env.go#L29-L34
       OTEL_TRACES_SAMPLER: "traceidratio=1.0,parentbased_always_on"
-
       OTEL_EXPORTER_OTLP_ENDPOINT: collector:4317 # gRPC
       OTEL_SERVICE_NAME: "socks"
     depends_on:
@@ -25,15 +24,15 @@ services:
   # the local caddy plus a config to reverse-proxy "/socks" to the "socks" service
   caddy:
     container_name: caddy
-    build:
-      context: .
+    image: ghcr.io/ki-insurance/image-caddy:0.1.1
     ports:
       - 8080:8080
     volumes:
-      - ./Caddyfile.example:/app/Caddyfile
-      - ./content/index.html:/app/content/index.html
+      - ./Caddyfile:/app/Caddyfile
+      - ./content:/app/content
     environment:
       SITE_ADDRESS: ":8080"
+
       # OTEL config
       # See:
       # - https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md
@@ -42,16 +41,14 @@ services:
       OTEL_SERVICE_NAME: "caddy"
       # resource attributes (AKA tags)
       OTEL_RESOURCE_ATTRIBUTES: "env=local,runtime=golang"
-
       # sampler settings.. you might not want to sample 100% of everything in real life
-      OTEL_TRACES_SAMPLER: "pollingIntervalMs=1000,initialSamplingRate=1"
-
+      # OTEL_TRACES_SAMPLER: "pollingIntervalMs=1000,initialSamplingRate=1"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc # "http/json", "http/protobuf", "grpc"
       # # uncomment these to debug GRPC to stdout
       # GRPC_GO_LOG_VERBOSITY_LEVEL: "99"
       # GRPC_GO_LOG_SEVERITY_LEVEL: info
-
+      
     depends_on:
       - collector
       - jaeger-all-in-one
@@ -65,7 +62,7 @@ services:
     command:
       - "--config=/etc/otel-collector-config.yaml"
     volumes:
-      - ./demo/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
       - "1888:1888"   # pprof extension
       - "8888:8888"   # Prometheus metrics exposed by the collector
@@ -81,7 +78,7 @@ services:
     image: prom/prometheus:latest
     restart: always
     volumes:
-      - ./demo/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
 

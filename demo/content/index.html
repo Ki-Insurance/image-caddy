@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>OpenTelemetry Example</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="shortcut icon" type="image/png" href="view-source:https://opentelemetry.io/favicons/favicon.ico">
+<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+<style>
+    [v-cloak] {
+        display: none;
+    }
+
+    .v-application .v-parallax {
+        height: 100vh !important;
+    }
+</style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <v-app dark>
+            <v-main>
+                <section>
+                    <v-parallax
+                        id="parallax-hero"
+                        :style="cuddleStyle"
+                        src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png"
+                        >
+                        <template>
+                            <v-layout
+                                column
+                                align-center
+                                justify-top
+                                class="white--text"
+                                >
+                                <div class="subheading mb-3 text-xs-center">
+
+                                    <v-switch
+                                        hide-details
+                                        inset
+                                        label="Automatic Polling"
+                                        dark
+                                        @click="toggleAutoPoll"
+                                        ></v-switch>
+
+                                </div>
+
+                                <v-btn
+                                    class="red darken-2 mt-3"
+                                    dark
+                                    large
+                                    @click="postBackend()"
+                                    >
+                                    <v-badge left color="orange">
+                                        <span slot="badge">${ pings }</span>
+                                        <v-icon left dark>touch_app</v-icon>
+                                    </v-badge>
+                                    Socks
+                                </v-btn>
+                                <v-timeline
+                                    side="end"
+                                    size="small"
+                                    >
+                                    <v-timeline-item
+                                        v-for="item in echos"
+                                        :color="(item.success ) ? 'green' : 'red'"
+                                        >
+                                        <div class="py-4">
+                                            <h2 headline
+                                                font-weight-bold>
+                                                ${item.time}
+                                            </h2>
+                                            <div>
+                                                ${ item.message }
+                                            </div>
+                                        </div>
+                                    </v-timeline-item>
+                                </v-timeline>
+                            </v-layout>
+                        </template>
+                    </v-parallax>
+                </section>
+            </v-main>
+        </v-app>
+    </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script>
+    new Vue({
+        delimiters: ['${', '}'],
+        el: '#app',
+        vuetify: new Vuetify(),
+        data: function () {
+            return {
+                echos: [],
+                info: {},
+                autoGet: false,
+                timer: '',
+                color: '',
+                pings: 0,
+                calls: 0,
+                cuddleStyle: {
+                    backgroundColor: '#34577c'
+                },
+                maxEchos: 5,
+                autoPoll: false,
+            }
+        },
+        created: function () {
+            this.getInfo();
+            this.timer = setInterval(this.getInfo, 15000) // every 15 sec or so
+            this.timer = setInterval(this.doAutoPoll, 1000)
+        },
+        methods: {
+            doAutoPoll: function(){
+                if (this.autoPoll) {
+                    this.postBackend();
+                }
+            },
+            getInfo: function () {
+                const xhr = new XMLHttpRequest();
+                let self = this;
+                xhr.open('GET', "socks/info")
+                xhr.onload = function () {
+                    data = JSON.parse(xhr.responseText)
+                    // not realy doing anything with the info data
+                    self.calls++
+                }
+                xhr.onerror = function () {
+                    console.log(xhr.responseText || 'request failed')
+                }
+                xhr.send()
+            },
+            toggleAutoPoll() {
+              this.autoPoll = !this.autoPoll
+              this.$emit('setCheckboxVal', this.autoPoll)
+            },
+            postBackend: function () {
+                var self = this
+                fetch("socks/echo", {
+                    method: 'get',
+                })
+                    .then(function (response) {
+                        self.pings++
+                        return response.json()
+                    })
+                    .then(function (json) {
+                        console.log('Request successful', json);
+                        json.time = (json.time / 1000 / 1000).toFixed(1)
+                        self.echos.push(json);
+                        // trim the list of echo's if we have more than 10
+                        if (self.echos.length > self.maxEchos) {
+                            self.echos = self.echos.slice(-self.maxEchos)
+                        }
+
+                    })
+                    .catch(function (error) {
+                        self.echos.push(json);
+                        json.time = (json.time / 1000 / 1000).toFixed(1)
+                        // trim the list of echo's if we have more than 10
+                        if (self.echos.length > self.maxEchos) {
+                            self.echos = self.echos.slice(-self.maxEchos)
+                        }
+                        console.log('Request failed', error);
+                    });
+            },
+        },
+    })
+</script>
+</body>
+</html>

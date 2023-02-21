@@ -19,21 +19,20 @@
 
 	# Enable static file server and lest the URI doesn't match a file, use the contents of index.html
 	handle {
-		root * ./content
+		root * /app/content
 		file_server
 		try_files {path} /index.html
-	  tracing {
-		  span frontend
-	  }
+		tracing {
+			span frontend
+		}
 	}
 
 	# Seperately we establish a revserse proxy out to our faux backend
 	handle /socks/* {
-
-	  # https://caddyserver.com/docs/caddyfile/directives/tracing
-	  tracing {
-		  span backend
-	  }
+		# https://caddyserver.com/docs/caddyfile/directives/tracing
+		tracing {
+			span backend
+		}
 
 		# reverse proxy this into "backend" server (hostname:port)
 		reverse_proxy /socks/* socks:1323
@@ -42,18 +41,17 @@
 		header ?Cache-Control "max-age=3600"
 	}
 
-	log {
-		format json
-		output stdout
-
-		# # Data protection example.. do not log the incoming "User-Agent" headers
-		# format filter {
-		# 	wrap console
-		# 	fields {
-		# 		request>headers>User-Agent delete
-		# 	}
-		# }
-	}
+	# log {
+	# 	format json
+	# 	output stdout
+	# 	# # Data protection example.. do not log the incoming "User-Agent" headers
+	# 	# format filter {
+	# 	# 	wrap console
+	# 	# 	fields {
+	# 	# 		request>headers>User-Agent delete
+	# 	# 	}
+	# 	# }
+	# }
 
 	# set some example headers again just for example
 	header Cache-Control max-age=3600

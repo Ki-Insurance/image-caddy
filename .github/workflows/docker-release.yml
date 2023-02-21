@@ -37,7 +37,7 @@ jobs:
         export REGISTRY=ghcr.io
         export IMAGE_NAME=${{ steps.string-repo.outputs.lowercase }}
         export GIT_DESCRIBE=$(git describe --tags --always)
-        export FULL_IMAGE=${REGISTRY}/${IMAGE_NAME}:${GIT_DESCRIBE}
+        export FULL_IMAGE=${REGISTRY}/${IMAGE_NAME}
         echo "FULL_IMAGE=${FULL_IMAGE}" >> ${GITHUB_ENV}
         echo "IMAGE_NAME=${IMAGE_NAME}" >> ${GITHUB_ENV}
         echo "GIT_DESCRIBE=${GIT_DESCRIBE}" >> ${GITHUB_ENV}
@@ -72,7 +72,6 @@ jobs:
       with:
         context: .
         push: ${{ github.event_name != 'pull_request' }}  # Don't push on PR
-        tags: ${{ env.FULL_IMAGE }}
+        tags: ${{ env.FULL_IMAGE }}:${{ env.GIT_DESCRIBE }},${{ env.FULL_IMAGE }}:latest
         labels: ${{ steps.dockermeta.outputs.labels }}
-        platforms: linux/amd64
-          #linux/arm64/v8
+        platforms: linux/amd64,linux/arm64

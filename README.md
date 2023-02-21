@@ -18,7 +18,7 @@ One simply needs to:
 Example Dockerfile:
 
 ```
-FROM ghcr.io/ki-insurance/image-caddy:667f7c9
+FROM ghcr.io/ki-insurance/image-caddy:latest
 
 # Override the default Caddyfile (optional)
 COPY Caddyfile /Caddyfile
@@ -36,19 +36,16 @@ To test it out:
 
 `docker-compose up --build`
 
-After its launched, trigger some traffic
+After its launched, trigger some traffic, see: http://localhost:8080
 
-```sh
-while true; do
-  curl localhost:8080/socks/foo -s
-  sleep 0.5
-  echo
-done
-```
+> alternatively you can trigger something via some curl
+>
+> eg: `curl localhost:8080/socks/echo`
 
 1 out of 10 of the curls should result in a non-200 (and they should be slower also)
 
 Now open Zipkin or Jaegar and you should see some traces
 see:
 - http://127.0.0.1:9411 (zipkin)
-- http://127.0.0.1:16686/search
+- http://127.0.0.1:16686 (Jaegar)
+- http://127.0.0.1:8080  (Small UI)

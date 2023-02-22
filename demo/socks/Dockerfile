@@ -1,9 +1,15 @@
-FROM golang:1.19-alpine
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/golang:1.19-alpine
 
 WORKDIR /app
 
 COPY . .
 
-RUN go build .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+      go build .
 
 CMD [ "./socks" ]

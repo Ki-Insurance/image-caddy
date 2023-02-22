@@ -1,33 +1,29 @@
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 
 # xcaddy is used to build caddy, we use this to allow access to build custom add-ons
 # see:
 #  - https://github.com/caddyserver/xcaddy
 #  - https://hub.docker.com/_/caddy/tags?page=1&name=builder-alpine
-FROM docker.io/caddy:builder-alpine AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/caddy:builder-alpine AS builder
 
 # Keep this version current!!
 # see:
 # - https://github.com/caddyserver/caddy/releases
-RUN xcaddy build v2.6.4
-
-FROM gruebel/upx:latest as upx
-COPY --from=builder /usr/bin/caddy /caddy.orig
-
-# Compress the binary ( https://upx.github.io )
-RUN upx --best --lzma \ 
-      /caddy.orig \
-      -o /caddy
-
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+      xcaddy build v2.6.4
 
 ### final image
-FROM alpine
+FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/alpine
 
 RUN apk add --no-cache \
       ca-certificates
 
 # add new user, lets not run as root
 RUN adduser -D app
-COPY --from=upx /caddy /caddy
+COPY --from=builder /usr/bin/caddy /caddy
 
 # Default config + content
 WORKDIR /app/content

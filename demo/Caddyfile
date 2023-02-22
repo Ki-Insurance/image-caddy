@@ -29,6 +29,7 @@
 
 	# Seperately we establish a revserse proxy out to our faux backend
 	handle /socks/* {
+		header /socks/* Cache-Control max-age=0
 		# https://caddyserver.com/docs/caddyfile/directives/tracing
 		tracing {
 			span backend
@@ -37,8 +38,6 @@
 		# reverse proxy this into "backend" server (hostname:port)
 		reverse_proxy /socks/* socks:1323
 
-		# only set Cache-Control if upstream does not
-		header ?Cache-Control "max-age=3600"
 	}
 
 	# log {
@@ -54,8 +53,8 @@
 	# }
 
 	# set some example headers again just for example
-	header Cache-Control max-age=3600
-	header /static/* Cache-Control max-age=31536000
+	header ?Cache-Control max-age=300                # default
+	header /static/* Cache-Control max-age=3600      # static assets
 
 	# more examples: https://caddyserver.com/docs/caddyfile/patterns
 }

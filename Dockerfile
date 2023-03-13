@@ -13,7 +13,7 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/caddy:builder-alpine AS 
 # see:
 # - https://github.com/caddyserver/caddy/releases
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-      xcaddy build v2.6.4
+      xcaddy build 9e943319b4ba2120e1f862f6615afb3c99e3a81e
 
 ### final image
 FROM --platform=${BUILDPLATFORM:-linux/amd64} docker.io/alpine
